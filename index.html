@@ -196,7 +196,8 @@
             return;
           }
 
-          const count = end - start + 1;
+          // Count how many numbers will be generated when stepping by 2
+          const count = Math.floor((end - start) / 2) + 1;
           if (count > 500) {
             showError(
               "Range is too large. Please limit to 500 addresses or fewer."
@@ -207,7 +208,7 @@
           const list = document.createElement("ul");
           list.className = "address-list";
           generatedAddresses = [];
-          for (let i = start; i <= end; i++) {
+          for (let i = start; i <= end; i += 2) {
             const text = `${i} ${addr}, ${pc}`;
             const li = document.createElement("li");
             li.textContent = text;
@@ -248,7 +249,8 @@
         // Download as .xlsx (single column, no header). Falls back to CSV if SheetJS isn't available.
         downloadBtn.addEventListener('click', function () {
           if (!generatedAddresses || generatedAddresses.length === 0) return;
-          const filename = 'addresses.xlsx';
+          const ts = Date.now();
+          const filename = `${ts}.xlsx`;
           if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
             // Build a 2D array where each row is [address]
             const aoa = generatedAddresses.map(a => [a]);
@@ -258,7 +260,7 @@
             XLSX.writeFile(wb, filename);
           } else {
             // Fallback to CSV with .csv extension
-            downloadCSV('addresses.csv', generatedAddresses);
+            downloadCSV(`${ts}.csv`, generatedAddresses);
           }
         });
       })();
