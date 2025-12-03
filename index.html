@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Address Generator</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+        padding: 32px;
+        background: #f7f9fc;
+        color: #111;
+      }
+      .container {
+        max-width: 720px;
+        margin: 0 auto;
+        background: white;
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: 0 6px 18px rgba(20, 30, 60, 0.08);
+      }
+      h1 {
+        margin: 0 0 12px 0;
+        font-size: 20px;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      label {
+        font-size: 13px;
+        color: #333;
+        display: block;
+        margin-bottom: 6px;
+      }
+      input[type="text"],
+      input[type="number"] {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #d7dbe6;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      .col {
+        flex: 1;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      button {
+        background: #2563eb;
+        color: white;
+        border: 0;
+        padding: 10px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: #e6eefc;
+        color: #064e9c;
+      }
+      .output {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 6px;
+        background: #fbfdff;
+        border: 1px solid #eef2ff;
+        max-height: 320px;
+        overflow: auto;
+      }
+      small.hint {
+        color: #556;
+        display: block;
+        margin-bottom: 8px;
+      }
+      ul.address-list {
+        padding-left: 18px;
+        margin: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Address Generator</h1>
+      <p class="hint">
+        Enter a beginning and ending number, an address line (street name) and a
+        postcode. Click Generate to produce addresses for each number in the
+        range.
+      </p>
+
+      <form id="genForm">
+        <div class="row">
+          <div class="col">
+            <label for="start">Beginning number</label>
+            <input
+              id="start"
+              name="start"
+              type="number"
+              placeholder="e.g. 1"
+              required
+            />
+          </div>
+          <div class="col">
+            <label for="end">Ending number</label>
+            <input
+              id="end"
+              name="end"
+              type="number"
+              placeholder="e.g. 10"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label for="address">Address (street)</label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              placeholder="e.g. Baker Street"
+              required
+            />
+          </div>
+          <div class="col">
+            <label for="postcode">Postcode</label>
+            <input
+              id="postcode"
+              name="postcode"
+              type="text"
+              placeholder="e.g. NW1 6XE"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Generate</button>
+          <button type="button" id="clearBtn" class="secondary">Clear</button>
+          <button type="button" id="downloadBtn" class="secondary" disabled>Download Excel</button>
+          <span style="margin-left: auto; color: #666; font-size: 13px">Max 500 addresses</span>
+        </div>
+      </form>
+
+      <div id="output" class="output" aria-live="polite"></div>
+    </div>
+
+    <!-- SheetJS (xlsx) for client-side .xlsx generation. If offline, the code will fall back to CSV download. -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script>
+      (function () {
+        let generatedAddresses = [];
+        const form = document.getElementById("genForm");
+        const startEl = document.getElementById("start");
+        const endEl = document.getElementById("end");
+        const addressEl = document.getElementById("address");
+        const postcodeEl = document.getElementById("postcode");
+        const output = document.getElementById("output");
+        const clearBtn = document.getElementById("clearBtn");
+        const downloadBtn = document.getElementById("downloadBtn");
+
+        function showError(msg) {
+          output.innerHTML = '<div style="color:#9b1c1c">' + msg + "</div>";
+        }
+
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const start = parseInt(startEl.value, 10);
+          const end = parseInt(endEl.value, 10);
+          const addr = addressEl.value.trim();
+          const pc = postcodeEl.value.trim();
+
+          if (Number.isNaN(start) || Number.isNaN(end)) {
+            showError(
+              "Please enter valid numeric beginning and ending numbers."
+            );
+            return;
+          }
+          if (start > end) {
+            showError(
+              "Beginning number must be less than or equal to ending number."
+            );
+            return;
+          }
+          if (!addr) {
+            showError("Please enter an address (street).");
+            return;
+          }
+          if (!pc) {
+            showError("Please enter a postcode.");
+            return;
+          }
+
+          const count = end - start + 1;
+          if (count > 500) {
+            showError(
+              "Range is too large. Please limit to 500 addresses or fewer."
+            );
+            return;
+          }
+
+          const list = document.createElement("ul");
+          list.className = "address-list";
+          generatedAddresses = [];
+          for (let i = start; i <= end; i++) {
+            const text = `${i} ${addr}, ${pc}`;
+            const li = document.createElement("li");
+            li.textContent = text;
+            list.appendChild(li);
+            generatedAddresses.push(text);
+          }
+
+          output.innerHTML = "";
+          output.appendChild(list);
+          // enable download button when addresses are generated
+          downloadBtn.disabled = generatedAddresses.length === 0;
+        });
+
+        clearBtn.addEventListener("click", function () {
+          startEl.value = "";
+          endEl.value = "";
+          addressEl.value = "";
+          postcodeEl.value = "";
+          output.innerHTML = "";
+          generatedAddresses = [];
+          downloadBtn.disabled = true;
+        });
+
+        // Helper to download CSV fallback
+        function downloadCSV(filename, rows) {
+          const csv = rows.map(r => '"' + r.replace(/"/g, '""') + '"').join('\r\n');
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }
+
+        // Download as .xlsx (single column, no header). Falls back to CSV if SheetJS isn't available.
+        downloadBtn.addEventListener('click', function () {
+          if (!generatedAddresses || generatedAddresses.length === 0) return;
+          const filename = 'addresses.xlsx';
+          if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
+            // Build a 2D array where each row is [address]
+            const aoa = generatedAddresses.map(a => [a]);
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+            XLSX.writeFile(wb, filename);
+          } else {
+            // Fallback to CSV with .csv extension
+            downloadCSV('addresses.csv', generatedAddresses);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
