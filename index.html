@@ -87,9 +87,8 @@
     <div class="container">
       <h1>Address Generator</h1>
       <p class="hint">
-        Enter a beginning and ending number, an address line (street name) and a
-        postcode. Click Generate to produce addresses for each number in the
-        range.
+        Enter a beginning and ending number, an address line and a postcode.
+        Click Generate to produce addresses for each number in the range.
       </p>
 
       <form id="genForm">
@@ -118,14 +117,8 @@
 
         <div class="row">
           <div class="col">
-            <label for="address">Address (street)</label>
-            <input
-              id="address"
-              name="address"
-              type="text"
-              placeholder="e.g. Baker Street"
-              required
-            />
+            <label for="address">Address</label>
+            <input id="address" name="address" type="text" required />
           </div>
           <div class="col">
             <label for="postcode">Postcode</label>
@@ -139,11 +132,87 @@
           </div>
         </div>
 
+        <!-- Additional fields for export headers -->
+        <div style="margin-top:12px; border-top:1px solid #eef2ff; padding-top:12px">
+          <h3 style="margin:0 0 8px 0; font-size:15px">Parcel / Recipient Details</h3>
+          <div class="row">
+            <div class="col">
+              <label for="recipientName">*Recipient Name</label>
+              <input id="recipientName" name="recipientName" type="text" required placeholder="Recipient full name" />
+            </div>
+            <div class="col">
+              <label for="recipientPhone">*Recipient Phone</label>
+              <input id="recipientPhone" value="60127162252" name="recipientPhone" type="text" required placeholder="e.g. +60123456789" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label for="parcelWeight">*Parcel Weight (KG)</label>
+              <input id="parcelWeight" value="1" name="parcelWeight" type="number" step="0.01" min="0" required />
+            </div>
+            <div class="col">
+              <label for="parcelLength">*Parcel Length (CM)</label>
+              <input id="parcelLength" value="1" name="parcelLength" type="number" step="0.1" min="0" required />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label for="parcelWidth">*Parcel Width (CM)</label>
+              <input id="parcelWidth" value="1" name="parcelWidth" type="number" step="0.1" min="0" required />
+            </div>
+            <div class="col">
+              <label for="parcelHeight">*Parcel Height (CM)</label>
+              <input id="parcelHeight" value="1" name="parcelHeight" type="number" step="0.1" min="0" required />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label for="itemName">*Item Name</label>
+              <input id="itemName" name="itemName" type="text" required />
+            </div>
+            <div class="col">
+              <label for="itemQuantity">Item Quantity</label>
+              <input id="itemQuantity" name="itemQuantity" type="number" min="1" value="1" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label for="customerRef">Customer Reference No.</label>
+              <input id="customerRef" name="customerRef" type="text" />
+            </div>
+            <div class="col">
+              <label for="paymentMethod">*Payment Method</label>
+              <select id="paymentMethod" name="paymentMethod" required>
+                <option value="Sender Pay">Sender Pay</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label for="deliveryInstruction">Delivery Instruction</label>
+              <input id="deliveryInstruction" name="deliveryInstruction" type="text" />
+            </div>
+            <div class="col">
+              <label for="parcelValue">*Parcel Value (Max 200 MYR)</label>
+              <input id="parcelValue" value="200" name="parcelValue" type="number" step="0.01" min="0" max="200" required />
+            </div>
+          </div>
+        </div>
+
         <div class="actions">
           <button type="submit">Generate</button>
           <button type="button" id="clearBtn" class="secondary">Clear</button>
-          <button type="button" id="downloadBtn" class="secondary" disabled>Download Excel</button>
-          <span style="margin-left: auto; color: #666; font-size: 13px">Max 500 addresses</span>
+          <button type="button" id="downloadBtn" class="secondary" disabled>
+            Download Excel
+          </button>
+          <span style="margin-left: auto; color: #666; font-size: 13px"
+            >Max 500 addresses</span
+          >
         </div>
       </form>
 
@@ -160,6 +229,19 @@
         const endEl = document.getElementById("end");
         const addressEl = document.getElementById("address");
         const postcodeEl = document.getElementById("postcode");
+        // New fields
+        const recipientNameEl = document.getElementById("recipientName");
+        const recipientPhoneEl = document.getElementById("recipientPhone");
+        const parcelWeightEl = document.getElementById("parcelWeight");
+        const parcelLengthEl = document.getElementById("parcelLength");
+        const parcelWidthEl = document.getElementById("parcelWidth");
+        const parcelHeightEl = document.getElementById("parcelHeight");
+        const itemNameEl = document.getElementById("itemName");
+        const itemQuantityEl = document.getElementById("itemQuantity");
+        const customerRefEl = document.getElementById("customerRef");
+        const paymentMethodEl = document.getElementById("paymentMethod");
+        const deliveryInstructionEl = document.getElementById("deliveryInstruction");
+        const parcelValueEl = document.getElementById("parcelValue");
         const output = document.getElementById("output");
         const clearBtn = document.getElementById("clearBtn");
         const downloadBtn = document.getElementById("downloadBtn");
@@ -196,6 +278,18 @@
             return;
           }
 
+          // Validate required new fields
+          if (!recipientNameEl.value.trim()) { showError('Please enter Recipient Name.'); return; }
+          if (!recipientPhoneEl.value.trim()) { showError('Please enter Recipient Phone.'); return; }
+          if (!parcelWeightEl.value || Number(parcelWeightEl.value) < 0) { showError('Please enter a valid Parcel Weight.'); return; }
+          if (!parcelLengthEl.value || Number(parcelLengthEl.value) < 0) { showError('Please enter a valid Parcel Length.'); return; }
+          if (!parcelWidthEl.value || Number(parcelWidthEl.value) < 0) { showError('Please enter a valid Parcel Width.'); return; }
+          if (!parcelHeightEl.value || Number(parcelHeightEl.value) < 0) { showError('Please enter a valid Parcel Height.'); return; }
+          if (!itemNameEl.value.trim()) { showError('Please enter Item Name.'); return; }
+          if (!paymentMethodEl.value) { showError('Please choose a Payment Method.'); return; }
+          if (!parcelValueEl.value || Number(parcelValueEl.value) < 0) { showError('Please enter Parcel Value.'); return; }
+          if (Number(parcelValueEl.value) > 200) { showError('Parcel Value must be 200 MYR or less.'); return; }
+
           // Count how many numbers will be generated when stepping by 2
           const count = Math.floor((end - start) / 2) + 1;
           if (count > 500) {
@@ -208,18 +302,40 @@
           const list = document.createElement("ul");
           list.className = "address-list";
           generatedAddresses = [];
+          // Build exported rows (array of arrays) and also render a readable list
+          const exportedRows = [];
           for (let i = start; i <= end; i += 2) {
-            const text = `${i} ${addr}, ${pc}`;
+            const detailAddress = `${i} ${addr}, ${pc}`;
             const li = document.createElement("li");
-            li.textContent = text;
+            li.textContent = detailAddress;
             list.appendChild(li);
-            generatedAddresses.push(text);
+
+            // Row order matches requested header
+            const row = [
+              recipientNameEl.value.trim(),
+              recipientPhoneEl.value.trim(),
+              detailAddress,
+              pc,
+              parcelWeightEl.value,
+              parcelLengthEl.value,
+              parcelWidthEl.value,
+              parcelHeightEl.value,
+              itemNameEl.value.trim(),
+              itemQuantityEl.value || '1',
+              customerRefEl.value.trim(),
+              paymentMethodEl.value,
+              deliveryInstructionEl.value.trim(),
+              parcelValueEl.value
+            ];
+            exportedRows.push(row);
+            generatedAddresses.push(detailAddress);
           }
 
           output.innerHTML = "";
           output.appendChild(list);
-          // enable download button when addresses are generated
-          downloadBtn.disabled = generatedAddresses.length === 0;
+          // store exported rows and enable download
+          window.__exportedRows = exportedRows;
+          downloadBtn.disabled = exportedRows.length === 0;
         });
 
         clearBtn.addEventListener("click", function () {
@@ -234,10 +350,12 @@
 
         // Helper to download CSV fallback
         function downloadCSV(filename, rows) {
-          const csv = rows.map(r => '"' + r.replace(/"/g, '""') + '"').join('\r\n');
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const csv = rows
+            .map((r) => '"' + r.replace(/"/g, '""') + '"')
+            .join("\r\n");
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
+          const a = document.createElement("a");
           a.href = url;
           a.download = filename;
           document.body.appendChild(a);
@@ -247,20 +365,50 @@
         }
 
         // Download as .xlsx (single column, no header). Falls back to CSV if SheetJS isn't available.
-        downloadBtn.addEventListener('click', function () {
-          if (!generatedAddresses || generatedAddresses.length === 0) return;
+        downloadBtn.addEventListener("click", function () {
+          // exported rows were stored when generating
+          const rows = window.__exportedRows || [];
+          if (!rows || rows.length === 0) return;
           const ts = Date.now();
           const filename = `${ts}.xlsx`;
-          if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
-            // Build a 2D array where each row is [address]
-            const aoa = generatedAddresses.map(a => [a]);
+          // Header with asterisks for required fields as requested
+          const header = [
+            '*Recipient Name',
+            '*Recipient Phone',
+            '*Detail Address',
+            '*Postal Code',
+            '*Parcel Weight (KG)',
+            '*Parcel Length (CM)',
+            '*Parcel Width (CM)',
+            '*Parcel Height (CM)',
+            '*Item Name',
+            'Item Quantity',
+            'Customer Reference No.',
+            '*Payment Method',
+            'Delivery Instruction',
+            '*Parcel Value (Max 200 MYR)'
+          ];
+
+          if (window.XLSX && typeof window.XLSX.utils !== "undefined") {
+            const aoa = [header].concat(rows);
             const ws = XLSX.utils.aoa_to_sheet(aoa);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
             XLSX.writeFile(wb, filename);
           } else {
-            // Fallback to CSV with .csv extension
-            downloadCSV(`${ts}.csv`, generatedAddresses);
+            // Fallback to CSV with header
+            const csvRows = [header].concat(rows).map(r => r.map(c => String(c || '')));
+            // flatten to CSV lines
+            const csvLines = csvRows.map(cols => cols.map(c => '"' + c.replace(/"/g,'""') + '"').join(','));
+            const blob = new Blob([csvLines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${ts}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
           }
         });
       })();
